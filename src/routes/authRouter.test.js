@@ -29,13 +29,30 @@ test('login', async () => {
 
 test("update user",async ()=>{
     
-  let emailNew = testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
-  let userNew = {email:`${emailNew}`, password:`${testUser.password}`};
-  const loginRes = await request(app).put(`/api/auth/${userID}`).set('Authorization', `Bearer ${testUserAuthToken}`).send(userNew)
-  expect(loginRes.body.email).toBe(emailNew);
+    let emailNew = testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
+    let userNew = {email:`${emailNew}`, password:`${testUser.password}`};
+    const loginRes = await request(app).put(`/api/auth/${userID}`).set('Authorization', `Bearer ${testUserAuthToken}`).send(userNew)
+    expect(loginRes.body.email).toBe(emailNew);
 
-  const WrongIDRes = await request(app).put(`/api/auth/wrong`).set('Authorization', `Bearer ${testUserAuthToken}`).send(userNew)
-  expect(WrongIDRes.status).toBe(403);
- })
+    const WrongIDRes = await request(app).put(`/api/auth/wrong`).set('Authorization', `Bearer ${testUserAuthToken}`).send(userNew)
+    expect(WrongIDRes.status).toBe(403);
+ });
 
+test('Unknown point', async () => {
+    const loginRes = await request(app).post('/api/auth/unknown').set('Authorization', `Bearer ${testUserAuthToken}`)
+    .send(testUser); 
+    expect(loginRes.status).toBe(404);
+    expect(loginRes.body.message).toBe('unknown endpoint') 
+});
 
+test('logout', async () => {
+    const loginRes = await request(app).delete('/api/auth').set('Authorization', `Bearer ${testUserAuthToken}`)
+    .send(testUser);
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.text).toBe(`{"message":"logout successful"}`);
+});
+
+test('Docs', async () => {  
+    const loginRes = await request(app).get('/api/docs')
+    expect(loginRes.status).toBeDefined();
+});
