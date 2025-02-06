@@ -56,3 +56,16 @@ test('Docs', async () => {
     const loginRes = await request(app).get('/api/docs')
     expect(loginRes.status).toBeDefined();
 });
+
+test('Welcome to JWT', async () => {
+    const loginRes = await request(app).get('/')
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.message).toBe('welcome to JWT Pizza')
+});
+  
+test('Unauthorized dealer', async () => {
+    let emailNew = testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
+    let userNew = {email:`${emailNew}`, password:`${testUser.password}`};
+    const loginRes = await request(app).put(`/api/auth/${userID}`).set('Authorization', `Bearer sdsdwer`).send(userNew)
+    expect(loginRes.body.message).toBe("unauthorized");
+});
