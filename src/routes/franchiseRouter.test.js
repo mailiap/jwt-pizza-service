@@ -9,17 +9,15 @@ let adminUserAuthToken = null;
 
 function randomName() {
     return Math.random().toString(36).substring(2, 12);
-  }
+}
 
-  async function createAdminUser() {
+async function createAdminUser() {
     let user = { password: 'toomanysecrets', roles: [{ role: Role.Admin }] };
     user.name = randomName();
     user.email = user.name + '@admin.com';
-  
     await DB.addUser(user);
-  
     return user;
-  }
+}
   
 let newAdminUser = null;
 let adminUserID = null;
@@ -27,17 +25,13 @@ let franchiseID = null;
 let storeID = null;
 
 beforeAll(async () => {
-
     testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
     const registerRes = await request(app).post('/api/auth').send(testUser);
     testUserAuthToken = registerRes.body.token;
     userID = registerRes.body.id;
-
     newAdminUser = await createAdminUser();
-
     let adminRegisterRes = await request(app).put('/api/auth').send({"email":`${newAdminUser.email}`, "password":"toomanysecrets"});
     adminUserAuthToken = adminRegisterRes.body.token;
-
     adminUserID = adminRegisterRes.body.id;
 
 });
