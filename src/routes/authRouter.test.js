@@ -22,7 +22,6 @@ test('login', async () => {
 
   const {password, ...user } = { ...testUser, roles: [{ role: 'diner' }] };
   expect(loginRes.body.user).toMatchObject(user);
-  //obligated lint checker
   expect(testUser.password).toBe(password);
 
  userID = loginRes.body.user.id;
@@ -54,10 +53,8 @@ test("update user",async ()=>{
   expect(loginRes.text).toBe(`{"message":"logout successful"}`);
 });
 
- //these are the first endpoints
  test('Docs', async () => {  
   const loginRes = await request(app).get('/api/docs')
-  //console.log(loginRes.body)
   expect(loginRes.status).toBeDefined();
 });
 
