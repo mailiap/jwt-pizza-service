@@ -4,7 +4,7 @@ const { Role, DB } = require('../database/database.js');
 const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let testUserAuthToken = null;
 let adminUserAuthToken = null;
-let newAdminUser = null;
+let newAdmin = null;
 
 function randomName() {
     return Math.random().toString(36).substring(2, 12);
