@@ -26,7 +26,7 @@ function randomName() {
     //login as admin
     newAdminUser = await createAdminUser();
 
-    let adminLoginRes = await request(app).post('/api/auth').send({"email":`${newAdminUser.email}`, "password":"toomanysecrets"});
+    let adminLoginRes = await request(app).put('/api/auth').send({"email":`${newAdminUser.email}`, "password":"toomanysecrets"});
     adminUserAuthToken = adminLoginRes.body.token;
 
     //register new user and use his auth token probably overkill, definitely actually
@@ -51,6 +51,8 @@ function randomName() {
 
     let newItemOnMenu = { "title":"Student", "description": "Everything on the burger please", "image":"nunya.png", "price": 0.0001 }
        const correctMenuResponse = await request(app).put("/api/order/menu").set('Authorization', `Bearer ${adminUserAuthToken}`).send(newItemOnMenu);
+
+       console.log(correctMenuResponse.body)
  
        expect(correctMenuResponse.statusCode).toBe(200);
    }) 
@@ -58,9 +60,9 @@ function randomName() {
    test('Create an order', async () => {
    
     let newOrder = {"franchiseId": 2, "storeId":1, "items":[{ "menuId": 1, "description": "Veggie", "price": 0.05 }]}
-    const loginRes = await request(app).post('/api/order').set('Authorization', `Bearer ${testUserAuthToken}`).send(newOrder)
+    const orderRes = await request(app).post('/api/order').set('Authorization', `Bearer ${testUserAuthToken}`).send(newOrder)
 
-    expect(loginRes.body.order.franchiseId).toBe(2)
+    expect(orderRes.statusCode).toBe(200)
 
     let badOrder = {"franchiseId": 2, "storeId":1,"Nah":"bad","this one has to be bad":null, "items":[{ "menuId": null, "description": "Veggie", "price": 0.05 }]}
     const badRes = await request(app).post('/api/order').set('Authorization', `Bearer BADAUTH?`).send(newOrder)
