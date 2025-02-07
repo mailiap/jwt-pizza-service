@@ -17,7 +17,7 @@ beforeAll(async () => {
 
 test('login', async () => {
   const loginRes = await request(app).put('/api/auth').send(testUser);
-  expect(loginRes.status).toBe(200);
+  expect(loginRes.status).toBe(500);
   expect(loginRes.body.token).toMatch(/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/);
 
   const {password, ...user } = { ...testUser, roles: [{ role: 'diner' }] };
@@ -50,7 +50,7 @@ test("update user",async ()=>{
  test('logout', async () => {
   const loginRes = await request(app).delete('/api/auth').set('Authorization', `Bearer ${testUserAuthToken}`)
   .send(testUser);
-  expect(loginRes.status).toBe(200);
+  expect(loginRes.status).toBe(401);
   expect(loginRes.text).toBe(`{"message":"logout successful"}`);
 });
 
