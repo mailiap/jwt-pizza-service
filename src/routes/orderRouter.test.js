@@ -26,8 +26,8 @@ function randomName() {
     //login as admin
     newAdminUser = await createAdminUser();
 
-    let adminRegisterRes = await request(app).put('/api/auth').send({"email":`${newAdminUser.email}`, "password":"toomanysecrets"});
-    adminUserAuthToken = adminRegisterRes.body.token;
+    let adminLoginRes = await request(app).post('/api/auth').send({"email":`${newAdminUser.email}`, "password":"toomanysecrets"});
+    adminUserAuthToken = adminLoginRes.body.token;
 
     //register new user and use his auth token probably overkill, definitely actually
     const registerRes = await request(app).post('/api/auth').send(testUser);
