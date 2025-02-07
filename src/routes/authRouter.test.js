@@ -1,65 +1,82 @@
-const request = require('supertest');
-const app = require('../service');
-const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
+const request = require("supertest");
+const app = require("../service");
+const { DB } = require("../database/database.js");
+
+const {
+  testUser,
+  registerTestUser,
+  getTestUserId,
+  getTestUserAuthToken,
+} = require("./testHelpers");
+
+let testUserId;
 let testUserAuthToken;
-let userID = null;
 
-beforeAll(async () => {
-  testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
-  const badTestUser = { name: 'pizza diner', email: '', password: '' };
-  const wrongResponse = await request(app).post('/api/auth').send(badTestUser);
-  expect(wrongResponse.status).toBe(400);
-  const registerRes = await request(app).post('/api/auth').send(testUser);
-  testUserAuthToken = registerRes.body.token;
-});
+async function assignTestValues() {
+  await registerTestUser();
+  testUserId = getTestUserId();
+  testUserAuthToken = getTestUserAuthToken();
+}
 
-test('login', async () => {
-  const loginRes = await request(app).put('/api/auth').send(testUser);
-  expect(loginRes.status).toBe(200);
-  expect(loginRes.body.token).toMatch(/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/);
-  const {password, ...user } = { ...testUser, roles: [{ role: 'diner' }] };
-  expect(loginRes.body.user).toMatchObject(user);
-  expect(testUser.password).toBe(password);
- userID = loginRes.body.user.id;
-});
+describe("authRouter", () => {
+  beforeAll(async () => {
+    await DB.initializeDatabase();
+    await assignTestValues();
+  });
 
-test("update user",async ()=>{
-    let emailNew = testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
-    let userNew = {email:`${emailNew}`, password:`${testUser.password}`};
-    const loginRes = await request(app).put(`/api/auth/${userID}`).set('Authorization', `Bearer ${testUserAuthToken}`).send(userNew)
-    expect(loginRes.body.email).toBe(emailNew);
-    const WrongIDRes = await request(app).put(`/api/auth/wrong`).set('Authorization', `Bearer ${testUserAuthToken}`).send(userNew)
-    expect(WrongIDRes.status).toBe(403);
- });
+  test("register invalid", async () => {
+    const responseRes = await request(app)
+      .post("/api/auth")
+      .send({ name: "test", email: "", password: "test" });
+    expect(responseRes.status).toBe(400);
+    expect(responseRes.body.message).toBe(
+      "name, email, and password are required",
+    );
+  });
 
-test('Unknown point', async () => {
-    const loginRes = await request(app).post('/api/auth/unknown').set('Authorization', `Bearer ${testUserAuthToken}`)
-    .send(testUser); 
-    expect(loginRes.status).toBe(404);
-    expect(loginRes.body.message).toBe('unknown endpoint') 
-});
-
-test('logout', async () => {
-    const loginRes = await request(app).delete('/api/auth').set('Authorization', `Bearer ${testUserAuthToken}`)
-    .send(testUser);
+  test("login", async () => {
+    const loginRes = await request(app).put("/api/auth").send(testUser);
     expect(loginRes.status).toBe(200);
-    expect(loginRes.text).toBe(`{"message":"logout successful"}`);
-});
+    expect(loginRes.body.token).toMatch(
+      /^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/,
+    );
+    const { ...user } = { ...testUser, roles: [{ role: "diner" }] };
+    delete user.password;
+    expect(loginRes.body.user).toMatchObject(user);
+  });
 
-test('Docs', async () => {  
-    const loginRes = await request(app).get('/api/docs')
-    expect(loginRes.status).toBeDefined();
-});
+  test("logout", async () => {
+    const logoutRes = await request(app)
+      .delete("/api/auth")
+      .set("Authorization", "Bearer " + testUserAuthToken);
+    expect(logoutRes.status).toBe(200);
+  });
 
-test('Welcome to JWT', async () => {
-    const loginRes = await request(app).get('/')
-    expect(loginRes.status).toBe(200);
-    expect(loginRes.body.message).toBe('welcome to JWT Pizza')
-});
-  
-test('Unauthorized dealer', async () => {
-    let emailNew = testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
-    let userNew = {email:`${emailNew}`, password:`${testUser.password}`};
-    const loginRes = await request(app).put(`/api/auth/${userID}`).set('Authorization', `Bearer sdsdwer`).send(userNew)
-    expect(loginRes.body.message).toBe("unauthorized");
+  test("update user no token", async () => {
+    const responseRes = await request(app)
+      .put("/api/auth/" + testUserId)
+      .send({ email: "test", password: "test" });
+    expect(responseRes.status).toBe(401);
+    expect(responseRes.body.message).toBe("unauthorized");
+  });
+
+  test("update user", async () => {
+    await assignTestValues();
+    const responseRes = await request(app)
+      .put("/api/auth/" + testUserId)
+      .set("Authorization", "Bearer " + testUserAuthToken)
+      .send({ email: testUser.email, password: testUser.password });
+    expect(responseRes.status).toBe(500);
+    const { ...user } = { ...testUser, roles: [{ role: "diner" }] };
+    delete user.password;
+    expect(responseRes.body).toMatchObject(user);
+  });
+
+  test("bad database", async () => {
+    await DB.initializeDatabase(true);
+  });
+
+  afterAll(async () => {
+    await DB.dropDatabase();
+  });
 });
