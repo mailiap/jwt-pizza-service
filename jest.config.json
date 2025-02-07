@@ -3,7 +3,11 @@
   "coverageReporters": ["json-summary", "text"],
   "coverageThreshold": {
     "global": {
-      "lines": 80
+      "check-coverage": true,
+      "lines": 80,
+      "branches": 0,
+      "functions": 0,
+      "statements": 0
     }
   }
 }
