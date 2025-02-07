@@ -78,4 +78,27 @@ test("Delete a franchise store",async ()=> {
     expect(menuResponse.body.message).toBe("unable to delete a store")
 });
 
+test("Delete a franchise store",async ()=> {
+    const menuResponse = await request(app).delete(`/api/franchise/${franchiseID}/store/${storeID}`).set('Authorization', `Bearer ${adminUserAuthToken}`);
+    expect(menuResponse.body.message).toBe("store deleted");
+});  
 
+test("successfully Delete a franchise", async ()=> {
+    const menuResponse = await request(app).delete(`/api/franchise/${franchiseID}`).set('Authorization', `Bearer ${adminUserAuthToken}`)
+    expect(menuResponse.body.message).toBe("franchise deleted");
+});
+
+test("Getting users franchise", async ()=> {
+    let userFranchiseResponse = await request(app).get(`/api/franchise/${adminUserID}`).set("Authorization",`Bearer ${adminUserAuthToken}`);
+    expect(userFranchiseResponse.body).toEqual([]);
+});
+
+test("unsuccessfully Delete a franchise",async ()=> {
+    const menuResponse = await request(app).delete(`/api/franchise/1`).set('Authorization', `Bearer ${testUserAuthToken}`)
+    expect(menuResponse.body.message).toBe("unable to delete a franchise")
+});
+
+afterAll(async()=>{
+    let logOutSuccessResponse = await request(app).delete('/api/auth').set("Authorization", `Bearer ${adminUserAuthToken}`);
+    expect(logOutSuccessResponse.body.message).toBe('logout successful' );
+});   
