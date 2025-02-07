@@ -1,7 +1,6 @@
 const request = require("supertest")
 const app = require("../service.js")
 const { Role, DB } = require('../database/database.js');
-
 const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let testUserAuthToken = null;
 let userID = null;
@@ -33,7 +32,6 @@ beforeAll(async () => {
     let adminRegisterRes = await request(app).put('/api/auth').send({"email":`${newAdminUser.email}`, "password":"toomanysecrets"});
     adminUserAuthToken = adminRegisterRes.body.token;
     adminUserID = adminRegisterRes.body.id;
-
 });
 
 test("Create new franchise failure",async ()=> {
