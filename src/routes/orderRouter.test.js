@@ -96,5 +96,24 @@ describe("orderRouter", () => {
     });
   });
 
+  test("Get User Orders", async () => {
+    const res = await request(app)
+      .get("/api/order")
+      .set("Authorization", `Bearer ${getTestUserAuthToken()}`);
+    expect(res.body).toEqual({
+      dinerId: getTestUserId(),
+      orders: [
+        {
+          id: expect.any(Number),
+          franchiseId: 1,
+          storeId: 1,
+          date: expect.any(String),
+          items: [{ id: 1, menuId: 1, description: "Veggie", price: 0.0038 }],
+        },
+      ],
+      page: 1,
+    });
+  });
+
   afterAll(async () => {});
 });

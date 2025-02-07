@@ -43,6 +43,7 @@ describe("authRouter", () => {
     const { ...user } = { ...testUser, roles: [{ role: "diner" }] };
     delete user.password;
     expect(loginRes.body.user).toMatchObject(user);
+    testUserId = loginRes.body.user.id;
   });
 
   test("logout", async () => {
@@ -66,10 +67,20 @@ describe("authRouter", () => {
       .put("/api/auth/" + testUserId)
       .set("Authorization", "Bearer " + testUserAuthToken)
       .send({ email: testUser.email, password: testUser.password });
-    expect(responseRes.status).toBe(500);
+    expect(responseRes.status).toBe(200);
     const { ...user } = { ...testUser, roles: [{ role: "diner" }] };
     delete user.password;
     expect(responseRes.body).toMatchObject(user);
+  });
+
+  test("update user wrong id", async () => {
+    await assignTestValues();
+    const responseRes = await request(app)
+      .put("/api/auth/" + 1)
+      .set("Authorization", "Bearer " + testUserAuthToken)
+      .send({ email: testUser.email, password: testUser.password });
+    expect(responseRes.status).toBe(403);
+    expect(responseRes.body.message).toBe("unauthorized");
   });
 
   test("bad database", async () => {
