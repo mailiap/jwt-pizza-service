@@ -21,8 +21,6 @@ jobs:
           - '3306:3306'
         options: >-
           --health-cmd "mysqladmin ping -ptempdbpassword" --health-interval 10s --health-start-period 10s --health-timeout 5s --health-retries 10
-
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -79,4 +77,3 @@ jobs:
             # git add .
             # git commit -m "generated"
             # git push
-            
