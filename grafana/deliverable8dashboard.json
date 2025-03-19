@@ -60,7 +60,9 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -68,7 +70,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.6.0-84491.patch1-84812",
+      "pluginVersion": "11.6.0-84846",
       "targets": [
         {
           "disableTextWrap": false,
@@ -181,7 +183,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.6.0-84491.patch1-84812",
+      "pluginVersion": "11.6.0-84846",
       "targets": [
         {
           "datasource": {
@@ -312,7 +314,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.6.0-84491.patch1-84812",
+      "pluginVersion": "11.6.0-84846",
       "targets": [
         {
           "disableTextWrap": false,
@@ -408,7 +410,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.6.0-84491.patch1-84812",
+      "pluginVersion": "11.6.0-84846",
       "targets": [
         {
           "datasource": {
@@ -513,5 +515,5 @@
   "timezone": "browser",
   "title": "Pizza Dashboard",
   "uid": "fegcbxv5fsow0d",
-  "version": 11
+  "version": 22
 }
