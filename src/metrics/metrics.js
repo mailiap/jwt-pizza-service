@@ -38,11 +38,11 @@ function sendMetricsToGrafana(metrics) {
   const body = JSON.stringify(metrics); // Convert the unified metrics object to JSON string
   console.log(body);
 
-  fetch(`${config.url}`, {
+  fetch(`${config.metrics.url}`, {
     method: "POST",
     body: body,
     headers: {
-      Authorization: `Bearer ${config.apiKey}`,
+      Authorization: `Bearer ${config.metrics.apiKey}`,
       "Content-Type": "application/json",
     },
   })
@@ -132,7 +132,7 @@ function authAttempMetrics(buf) {
 
 function getCpuUsagePercentage() {
   const cpuUsage = os.loadavg()[0] / os.cpus().length;
-  return Math.floor(cpuUsage.toFixed(2) * 100);
+  return cpuUsage.toFixed(2) * 100;
 }
 
 function getMemoryUsagePercentage() {
@@ -140,7 +140,7 @@ function getMemoryUsagePercentage() {
   const freeMemory = os.freemem();
   const usedMemory = totalMemory - freeMemory;
   const memoryUsage = (usedMemory / totalMemory) * 100;
-  return Math.floor(memoryUsage.toFixed(2));
+  return memoryUsage.toFixed(2);
 }
 
 function addCPUMetric(buf) {
