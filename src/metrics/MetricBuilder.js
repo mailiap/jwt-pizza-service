@@ -16,12 +16,6 @@ class MetricBuilder {
                     {
                       asInt: metricValue,
                       timeUnixNano: Date.now() * 1000000,
-                      attributes: [
-                        {
-                            key: source,
-                            value: { stringValue: "jwt-pizza-service" }
-                        }
-                      ]
                     },
                   ],
                 },
