@@ -25,9 +25,8 @@ setInterval(() => {
     authMetrics(buf);
     authAttempMetrics(buf);
     systemMetrics(buf);
-    // purchaseMetrics(buf);
 
-    const metrics = buf.toJSON(); // Get unified metrics as a single JSON object
+    const metrics = buf.toJSON(); 
     sendMetricsToGrafana(metrics);
   } catch (error) {
     console.log("Error sending metrics", error);
@@ -35,7 +34,7 @@ setInterval(() => {
 }, 5000);
 
 function sendMetricsToGrafana(metrics) {
-  const body = JSON.stringify(metrics); // Convert the unified metrics object to JSON string
+  const body = JSON.stringify(metrics); 
   console.log(body);
 
   fetch(`${config.metrics.url}`, {
@@ -63,7 +62,6 @@ function sendMetricsToGrafana(metrics) {
 }
 
 function metricTracker(req, res, next) {
-  // const start = Date.now();
   trackHttpMetrics(req);
   trackAuthMetrics(req, res);
 
@@ -80,10 +78,8 @@ function trackHttpMetrics(req) {
 }
 
 function httpMetrics(buf) {
-  // Total number of requests
   buf.addMetric("http_requests_total", httpStats.totalRequests, "sum", "1");
 
-  // Requests per method
   Object.entries(httpStats.methodCounts).forEach(([method, count]) => {
     buf.addMetric(`http_requests_${method.toLowerCase()}`, count, "sum", "1");
   });
@@ -115,7 +111,6 @@ function incrementAuthAttemptRates(res) {
       console.log("unsuccesful login/logout attempt", res.statusCode);
     }
   });
-  // Successful login attempt (e.g., PUT /api/auth with valid credentials)
 }
 
 function authAttempMetrics(buf) {

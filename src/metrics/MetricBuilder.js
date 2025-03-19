@@ -15,7 +15,7 @@ class MetricBuilder {
                 dataPoints: [
                   {
                     asInt: metricValue,
-                    timeUnixNano: Date.now() * 1000000, // Convert milliseconds to nanoseconds
+                    timeUnixNano: Date.now() * 1000000, 
                   },
                 ],
               },
