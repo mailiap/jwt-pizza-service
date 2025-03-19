@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 15,
+  "id": 14,
   "links": [],
   "panels": [
     {
@@ -60,7 +60,9 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -513,5 +515,5 @@
   "timezone": "browser",
   "title": "Pizza Dashboard",
   "uid": "deg9zxxa6regwc",
-  "version": 18
+  "version": 39
 }
