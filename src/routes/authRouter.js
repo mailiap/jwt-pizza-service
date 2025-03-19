@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const config = require('../config');
+const config = require('../config.js');
 const { StatusCodeError, asyncHandler } = require('../endpointHelper.js');
 const { DB, Role } = require('../database/database.js');
 
