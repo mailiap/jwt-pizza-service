@@ -1,4 +1,4 @@
-const config = require("../config.js");
+const config = require("../config");
 const { MetricBuilder } = require("./MetricBuilder");
 const os = require("os");
 
