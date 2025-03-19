@@ -140,11 +140,11 @@ function getMemoryUsagePercentage() {
 
 function addCPUMetric(buf) {
   cpuUsage = getCpuUsagePercentage();
-  buf.addMetric("cpu_usage", cpuUsage, "gauge", "1");
+  buf.addMetric("cpu-usage", cpuUsage, "gauge", "1");
 }
 function addMemoyMetric(buf) {
   memoryPercentage = getMemoryUsagePercentage();
-  buf.addMetric("memory_usage", memoryPercentage, "gauge", "1");
+  buf.addMetric("memory-usage", memoryPercentage, "gauge", "1");
 }
 
 function systemMetrics(buf) {
