@@ -1,4 +1,4 @@
-const config = require('./config');
+const config = require('./config.js');
 
 class Logger {
   httpLogger = (req, res, next) => {
@@ -6,11 +6,12 @@ class Logger {
     res.send = (resBody) => {
       const logData = {
         authorized: !!req.headers.authorization,
-        path: req.originalUrl,
+        path: `${req.hostname}${req.originalUrl}`,
+        ip: req.ip,
         method: req.method,
         statusCode: res.statusCode,
-        reqBody: JSON.stringify(req.body),
-        resBody: JSON.stringify(resBody),
+        req: JSON.stringify(req.body),
+        res: resBody,
       };
       const level = this.statusToLogLevel(res.statusCode);
       this.log(level, 'http', logData);
@@ -21,8 +22,9 @@ class Logger {
   };
 
   log(level, type, logData) {
+    logData = this.sanitize(logData);
     const labels = { component: config.logging.source, level: level, type: type };
-    const values = [this.nowString(), this.sanitize(logData)];
+    const values = [this.nowString(), logData];
     const logEvent = { streams: [{ stream: labels, values: [values] }] };
 
     this.sendLogToGrafana(logEvent);
@@ -40,7 +42,10 @@ class Logger {
 
   sanitize(logData) {
     logData = JSON.stringify(logData);
-    return logData.replace(/\\"password\\":\s*\\"[^"]*\\"/g, '\\"password\\": \\"*****\\"');
+    logData = logData.replace(/\\"password\\":\s*\\"[^"]*\\"/g, '\\"password\\": \\"*****\\"');
+    logData = logData.replace(/\\"token\\":\s*\\"[^"]*\\"/g, '\\"token\\": \\"*****\\"');
+
+    return logData;
   }
 
   sendLogToGrafana(event) {
@@ -52,9 +57,13 @@ class Logger {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${config.logging.userId}:${config.logging.apiKey}`,
       },
-    }).then((res) => {
-      if (!res.ok) console.log('Failed to send log to Grafana');
-    });
+    })
+      .then((res) => {
+        if (!res.ok) console.log('Failed to send log to Grafana');
+      })
+      .catch((error) => {
+        console.error('Error pushing logs:', error);
+      });
   }
 }
 module.exports = new Logger();
