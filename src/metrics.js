@@ -1,156 +1,113 @@
-const config = require('./config.js');
-const os = require('os');
-const logger = require('./logger.js');
+const config = require('./config');
 
-class MetricBuilder {
-  constructor() {
-    this._strings = [];
+let httpRequests = { GET: 0, POST: 0, PUT: 0, DELETE: 0 };
+let totalRequests = 0;
+let activeUsers = 0;
+let successfulAuth = 0;
+let failedAuth = 0;
+let cpuUsage = 0;
+let memoryUsage = 0;
+let pizzasSold = 0;
+let creationFailures = 0;
+let revenue = 0;
+let endpointLatency = { '/createPizza': 0, '/service': 0 };
+
+setInterval(() => {
+  // CPU and Memory Usage
+  cpuUsage = Math.floor(Math.random() * 100);
+  memoryUsage = Math.floor(Math.random() * 100);
+  sendMetricToGrafana('cpu', cpuUsage, 'gauge', '%');
+  sendMetricToGrafana('memory', memoryUsage, 'gauge', '%');
+
+  // HTTP Requests by Method
+  httpRequests.GET += Math.floor(Math.random() * 10);
+  httpRequests.POST += Math.floor(Math.random() * 5);
+  httpRequests.PUT += Math.floor(Math.random() * 3);
+  httpRequests.DELETE += Math.floor(Math.random() * 2);
+  totalRequests = Object.values(httpRequests).reduce((sum, value) => sum + value, 0);
+
+  Object.keys(httpRequests).forEach(method => {
+    sendMetricToGrafana(`http_request_${method.toLowerCase()}`, httpRequests[method], 'sum', '1');
+  });
+
+  sendMetricToGrafana('http_request_total', totalRequests, 'sum', '1');
+
+
+  // Active Users
+  activeUsers = Math.floor(Math.random() * 50);
+  sendMetricToGrafana('active_users', activeUsers, 'gauge', '1');
+
+  // Auth Attempts
+  successfulAuth += Math.floor(Math.random() * 5);
+  failedAuth += Math.floor(Math.random() * 3);
+  sendMetricToGrafana('auth_success', successfulAuth, 'sum', '1');
+  sendMetricToGrafana('auth_failure', failedAuth, 'sum', '1');
+
+  // Pizza Metrics
+  pizzasSold += Math.floor(Math.random() * 10);
+  creationFailures += Math.floor(Math.random() * 3);
+  revenue += pizzasSold * 12; // Assuming $12/pizza
+  sendMetricToGrafana('pizzas_sold', pizzasSold, 'sum', '1');
+  sendMetricToGrafana('creation_failures', creationFailures, 'sum', '1');
+  sendMetricToGrafana('revenue', revenue, 'sum', '$');
+
+  // Latency by Endpoint
+  endpointLatency['/createPizza'] = Math.floor(Math.random() * 300);
+  endpointLatency['/service'] = Math.floor(Math.random() * 500);
+  sendMetricToGrafana('latency_createPizza', endpointLatency['/createPizza'], 'sum', 'ms');
+  sendMetricToGrafana('latency_service', endpointLatency['/service'], 'sum', 'ms');
+}, 1000);
+
+function sendMetricToGrafana(metricName, metricValue, type, unit) {
+  const metric = {
+    resourceMetrics: [
+      {
+        scopeMetrics: [
+          {
+            metrics: [
+              {
+                name: metricName,
+                unit: unit,
+                [type]: {
+                  dataPoints: [
+                    {
+                      asInt: metricValue,
+                      timeUnixNano: Date.now() * 1000000,
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  if (type === 'sum') {
+    metric.resourceMetrics[0].scopeMetrics[0].metrics[0][type].aggregationTemporality = 'AGGREGATION_TEMPORALITY_CUMULATIVE';
+    metric.resourceMetrics[0].scopeMetrics[0].metrics[0][type].isMonotonic = true;
   }
 
-  append(metricPrefix, metricName, metricValue) {
-    const metric = `${metricPrefix},source=${config.metrics.source} ${metricName}=${metricValue}`;
-    this._strings.push(metric);
-    return this;
-  }
-
-  toString(delim = '\n') {
-    return this._strings.join(delim);
-  }
-}
-
-class Metrics {
-  constructor() {
-    this.requestLatency = 0;
-    this.requests = {};
-    this.purchase = { count: 0, revenue: 0, error: 0, latency: 0 };
-    this.authEvents = { success: 0, failure: 0 };
-    this.activeUsers = new Map();
-  }
-
-  sendMetricsPeriodically(period) {
-    const timer = setInterval(() => {
-      try {
-        this.sendMetricToGrafana(this.getMetrics());
-      } catch (error) {
-        logger.log('error', 'metrics', { msg: 'Error sending metrics', err: { msg: error.message, stack: error.stack } });
+  const body = JSON.stringify(metric);
+  fetch(`${config.metrics.url}`, {
+    method: 'POST',
+    body: body,
+    headers: {
+      Authorization: `Bearer ${config.metrics.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        response.text().then((text) => {
+          console.error(`Failed to push metrics data to Grafana: ${text}\n${body}`);
+        });
+      } else {
+        console.log(`Pushed ${metricName}`);
       }
-    }, period);
-
-    timer.unref();
-  }
-
-  metricsReporter = (req, res) => {
-    res.send(this.getMetrics());
-  };
-
-  getMetrics(delim = '\n') {
-    const buf = new MetricBuilder();
-    this.httpMetrics(buf);
-    this.systemMetrics(buf);
-    this.userMetrics(buf);
-    this.purchaseMetrics(buf);
-    this.authMetrics(buf);
-
-    return buf.toString(delim);
-  }
-
-  requestTracker = (req, res, next) => {
-    const httpMethod = req.method.toLowerCase();
-    const previousValue = this.requests[httpMethod] ?? 0;
-    this.requests[httpMethod] = previousValue + 1;
-
-    const dateNow = Date.now();
-    if (req.user) {
-      if (this.activeUsers.has(req.user.id)) {
-        this.activeUsers.get(req.user.id).last = dateNow;
-      }
-    }
-
-    let send = res.send;
-    res.send = (resBody) => {
-      this.requestLatency += Date.now() - dateNow;
-      res.send = send;
-      return res.send(resBody);
-    };
-
-    next();
-  };
-
-  loginEvent = (userId, success) => {
-    this.authEvents[success ? 'success' : 'failure'] += 1;
-    if (success) {
-      this.activeUsers.set(userId, { login: Date.now(), last: Date.now() });
-    }
-  };
-
-  orderEvent = (orderEvent) => {
-    this.purchase.count += orderEvent.count;
-    this.purchase.revenue += orderEvent.revenue;
-    this.purchase.error += orderEvent.error ? 1 : 0;
-    if (orderEvent.end && orderEvent.start) {
-      const latency = orderEvent.end - orderEvent.start;
-      this.purchase.latency += latency;
-    }
-  };
-
-  httpMetrics(buf) {
-    buf.append('pizza_http_latency', 'total', this.requestLatency);
-    const totalRequests = Object.values(this.requests).reduce((acc, curr) => acc + curr, 0);
-    buf.append('pizza_http_request', 'all_total', totalRequests);
-    Object.keys(this.requests).forEach((httpMethod) => {
-      buf.append(`pizza_http_request`, `${httpMethod}_total`, this.requests[httpMethod]);
-    });
-  }
-
-  systemMetrics(buf) {
-    buf.append('pizza_system_cpu', 'percent', this.getCpuUsagePercentage());
-    buf.append('pizza_system_memory', 'used', this.getMemoryUsagePercentage());
-  }
-
-  userMetrics(buf) {
-    this.activeUsers.forEach((value, key) => {
-      const expiresThreshold = Date.now() - 10 * 60 * 1000;
-      if (value.last < expiresThreshold) {
-        this.activeUsers.delete(key);
-      }
-    });
-    buf.append('pizza_user_count', 'total', this.activeUsers.size);
-  }
-
-  purchaseMetrics(buf) {
-    buf.append('pizza_purchase_count', 'total', this.purchase.count);
-    buf.append('pizza_purchase_revenue', 'total', this.purchase.revenue);
-    buf.append('pizza_purchase_latency', 'total', this.purchase.latency);
-    buf.append('pizza_purchase_error', 'total', this.purchase.error);
-  }
-
-  authMetrics(buf) {
-    buf.append('pizza_auth_success', 'total', this.authEvents.success);
-    buf.append('pizza_auth_failure', 'total', this.authEvents.failure);
-  }
-
-  getCpuUsagePercentage() {
-    const cpuUsage = os.loadavg()[0] / os.cpus().length;
-    return cpuUsage.toFixed(2) * 100;
-  }
-
-  getMemoryUsagePercentage() {
-    const totalMemory = os.totalmem();
-    const freeMemory = os.freemem();
-    const usedMemory = totalMemory - freeMemory;
-    const memoryUsage = (usedMemory / totalMemory) * 100;
-    return memoryUsage.toFixed(2);
-  }
-
-  sendMetricToGrafana(metrics) {
-    fetch(`${config.metrics.url}`, {
-      method: 'post',
-      body: metrics,
-      headers: { Authorization: `Bearer ${config.metrics.userId}:${config.metrics.apiKey}` },
-    }).catch((error) => {
+    })
+    .catch((error) => {
       console.error('Error pushing metrics:', error);
     });
-  }
 }
-
-module.exports = new Metrics();
